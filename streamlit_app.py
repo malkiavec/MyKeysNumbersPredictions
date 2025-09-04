@@ -1,6 +1,6 @@
 shift_based_prediction.py
 
-Run: streamlit run shift_based_prediction.py
+Run: streamlit run streamliy_app.py
 
 import itertools as it import math from collections import Counter from typing import List, Tuple, Dict
 
