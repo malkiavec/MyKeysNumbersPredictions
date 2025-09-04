@@ -105,6 +105,7 @@ max_lag = st.sidebar.slider("Max skip (lag) to analyze", 1, 5, 3, 1)
 per_digit_topk = st.sidebar.slider("Top-K targets per digit", 1, 10, 3, 1)
 play_mode = st.sidebar.radio("Prediction set size", ["10 picks", "20 picks", "30 picks"])
 num_preds = int(play_mode.split()[0])
+num_fb_preds = st.sidebar.slider("Top probabilistic Fireball digits", 1, 5, 2, 1)
 
 # -----------------------------
 # Main Logic
@@ -169,16 +170,24 @@ if draws:
         if len(unique_preds) >= num_preds:
             break
 
-    # Fireball prediction: simple frequency model if available
-    fb_pred = None
-    fb_counts = Counter([f for f in fireballs if f is not None])
-    if fb_counts:
-        fb_pred = max(fb_counts.items(), key=lambda t: t[1])[0]
+    # Probabilistic Fireball prediction
+    fireball_scores = Counter()
+    for fb_digit in range(10):
+        score = 0
+        for cand, _ in unique_preds:
+            for pos in range(n_digits):
+                modified = list(cand)
+                modified[pos] = fb_digit
+                score += score_by_transition_likelihood(tuple(modified), last_draw, probs)
+        fireball_scores[fb_digit] = score
+
+    top_fireballs = [fb for fb, _ in fireball_scores.most_common(num_fb_preds)]
 
     preds = []
     for c, _ in unique_preds:
-        if fb_pred is not None:
-            preds.append(f"{tuple_to_str(c)} (+ Fireball: {fb_pred})")
+        if top_fireballs:
+            for fb in top_fireballs:
+                preds.append(f"{tuple_to_str(c)} (+ Fireball: {fb})")
         else:
             preds.append(tuple_to_str(c))
 
